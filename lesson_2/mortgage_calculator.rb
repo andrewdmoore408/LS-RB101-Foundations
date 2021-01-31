@@ -14,9 +14,11 @@ prompt 'Welcome to the Mortgage Calculator! Enter your name:'
 
 NAME = gets.chomp
 
-prompt "Hi, #{NAME}! Let's get your loan calculated."
-
 loop do
+
+  prompt "------------------------------------------------"
+
+  prompt "Hi, #{NAME}! Let's get your loan calculated."
 
   prompt "What's the total loan amount?"
   
