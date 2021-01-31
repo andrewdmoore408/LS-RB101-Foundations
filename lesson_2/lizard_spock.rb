@@ -1,11 +1,19 @@
 VALID_CHOICES = %w(rock paper scissors lizard spock)
 
-DEFEATS = { 
+DEFEATS = {
   VALID_CHOICES[0] => [VALID_CHOICES[3], VALID_CHOICES[2]],
-  VALID_CHOICES[1] => [VALID_CHOICES[0], VALID_CHOICES[4]], 
-  VALID_CHOICES[2] => [VALID_CHOICES[1], VALID_CHOICES[3]], 
+  VALID_CHOICES[1] => [VALID_CHOICES[0], VALID_CHOICES[4]],
+  VALID_CHOICES[2] => [VALID_CHOICES[1], VALID_CHOICES[3]],
   VALID_CHOICES[3] => [VALID_CHOICES[4], VALID_CHOICES[1]],
   VALID_CHOICES[4] => [VALID_CHOICES[2], VALID_CHOICES[0]]
+}
+
+CHOICE_ABBREVIATIONS = {
+  'r' => 'rock',
+  'p' => 'paper',
+  's' => 'scissors',
+  'l' => 'lizard',
+  'k' => 'spock'
 }
 
 def win?(first, second)
@@ -31,7 +39,12 @@ loop do
 
   loop do
     prompt("Choose one: #{VALID_CHOICES.join(', ')}")
+    prompt("You can also just use first letter (k for spock)")
     choice = Kernel.gets().chomp()
+
+    if choice.size == 1 && CHOICE_ABBREVIATIONS[choice]
+      choice = CHOICE_ABBREVIATIONS[choice]
+    end
 
     if VALID_CHOICES.include?(choice)
       break
