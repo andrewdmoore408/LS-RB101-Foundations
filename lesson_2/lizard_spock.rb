@@ -22,9 +22,9 @@ end
 
 def get_result(choice, computer_choice)
   if win?(choice, computer_choice)
-    :player 
+    :player
   elsif win?(computer_choice, choice)
-    :computer 
+    :computer
   else
     :tie
   end
@@ -53,13 +53,12 @@ end
 
 # main game loop
 loop do
-
   points = { player: 0, computer: 0, tie: 0 }
   keep_playing = 'n'
-  
+
   loop do
     choice = ''
-  
+ 
     loop do
       prompt("Choose one: #{VALID_CHOICES.join(', ')}")
       prompt("You can also just use first letter (k for spock)")
@@ -86,7 +85,7 @@ loop do
     points[result] += 1
 
     if points[:player] == 5 || points[:computer] == 5
-      prompt("\n\nGAME OVER!\n\n#{points[:player] == 5 ? "You" : "Computer"} won!")
+      prompt("\nGAME OVER!\n#{points[:player] == 5 ? 'You' : 'Computer'} won!")
       break
     else
       display_points(points)
@@ -96,7 +95,7 @@ loop do
     keep_playing = Kernel.gets().chomp()
   
     break unless keep_playing.downcase().start_with?("y")
-  end 
+  end
 
   break if keep_playing != 'y'
 
