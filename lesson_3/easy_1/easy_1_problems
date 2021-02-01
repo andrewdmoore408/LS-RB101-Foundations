@@ -1,0 +1,56 @@
+Question 1
+
+I'd expect this to output [1, 2, 2, 3]. (#uniq does not mutate the caller--as opposed to uniq!--so the value assigned to numbers hasn't changed).
+
+CORRECTION: The elements themselves are put out, not the array as a whole. 1 2 2 3 (on separate lines) is what's returned.
+
+Question 2
+
+! can be used both for logical negation if placed in front of a variable or to signal a mutating method when placed at the end. (The latter is a convention and is not enforced, so a method could mutate its caller without a '!' at the end of its name or even have a '!' at the end without mutating the caller if defined by the programmer that way).
+
+? is used by itself (surrounded by whitespace) as part of the ternary conditional expression--a shorthand if/else statement where one value is returned if a condition is true and another if it's false. 
+
+At the end of a method name, it's a convention denoting a predicate function.
+
+1. != means "not equal to." It's used in conditional expressions and returns true if the left and right objects are not equal to one another.
+
+2. ! before a variable negates it. So if it would normally be truthy, it's now falsy; vice versa applies as well.
+
+3. While not enforced, adding ! to the end of a method typically means that the method is now mutating its caller rather than returning a modified version while leaving the caller unchanged.
+
+4. I don't believe putting ? before something would be allowed according to the naming rules. Unless this refers to the ternary operator, in which case the ? would be surrounded by whitespace and would precede the value returned if the condition is truthy.
+
+5. By convention, putting ? at the end of a method name indicates that it's a predicate/boolean function, but this is not enforced.
+
+6. Prepending !! to a variable forces it to a boolean status and returns its truthiness--it will be falsy if it's false or nil and truthy otherwise. 
+
+Question 3
+
+advice.sub!('important', 'urgent')
+
+Question 4
+
+I believe numbers.delete_at(1) => [1, 3, 4, 5]
+
+numbers.delete(1) => [2, 3, 4, 5]
+
+Question 5
+
+(10..100).each { |x| puts x if x == 42 }
+
+CORRECTION: the Range#cover? method is a boolean that returns whether or not a given obj is inside a range.
+
+Question 6
+
+famous_words = "Four score and " + famous_words
+
+famous_words.prepend('Four score and ')
+famous_words.insert(0, 'Four score and ')
+
+Question 7
+
+flintstones.flatten!
+
+Question 8 
+
+(I couldn't figure this one out without looking. Now I know it's the Hash#assoc method)
