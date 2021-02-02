@@ -1,0 +1,39 @@
+Question 1
+
+10.times { |i| puts (' ' * i) + "The Flintstones Rock!" }
+
+Question 2
+
+This will cause an error because the type of value in parenthese is integer, not string. This could be fixed by invoking .to_s or by using string interpolation.
+
+Question 3
+
+The simplest way to handle this would be to have the method return nil if numbers <= 0 before entering the loop. 
+
+  Bonus 1: The purpose of number % divisor == 0 is to check for no remainder, verifying whether or not a number is a factor (divides evenly).
+
+  Bonus 2: line 8 sets the return value of the method to factors.
+
+Question 4
+
+One difference is that an array that's passed into the first method is mutated; this is not the case with the second method. This would be important to be aware of--whether or not the array used in the calling method is mutated.
+
+Question 5
+
+The limit variable is not defined within the method. The definition (limit = 15) needs to be moved inside the method (before the loop begins).
+
+Question 6
+
+The output should be 34 (42 - 8)
+
+Question 7
+
+The data will be all changed because the value of the reference to the munsters hash was passed into the method and then the code iterated through all the values to modify them.
+
+Question 8
+
+The return value should be "paper"
+
+Question 9
+
+The return value should be no. The foo method always returns "yes" and the bar method will return "no" because "yes" is what's passed into it as an argument.
