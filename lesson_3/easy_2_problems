@@ -1,0 +1,78 @@
+Question 1
+
+ages.key?("Spot")
+
+other options are #has_key? #member? and #include?
+
+Question 2
+
+# tHE mUNSTERS ARE CREEPY IN A GOOD WAY."
+
+(Didn't find the answer myself but it's the String#swapcase! method)
+
+# The munsters are creepy in a good way."
+
+munsters_description.capitalize!
+
+# "the munsters are creepy in a good way."
+
+munsters_description.downcase!
+
+# "THE MUNSTERS ARE CREEPY IN A GOOD WAY."
+
+munsters_description.upcase!
+
+Question 3
+
+ages = ages.merge(additional_ages)
+
+Question 4
+
+advice =~ /Dino/
+
+Question 5
+
+flintstones = %w(Fred Barney Wilma Betty BamBam Pebbles)
+
+Question 6
+
+If the array's already constructed, "Dino" can be added using Array#push: flintstones.push("Dino)
+
+Otherwise, "Dino" can be added without quotes as a separate word after Pebbles and before the end parens.
+
+The << operator could also be used: flintstones << "Dino"
+
+Question 7
+
+Array#push can take multiple elements--flintstones.push("Dino", "Hoppy") would work. 
+
+Question 8
+
+advice.slice!("Few things in life are as important as ")
+
+Using the #slice method (without the !) doesn't mutate the original string; in this case, it would return the same thing but leave the original string intact.
+
+(Suggested solution makes more sense programmatically, uses String#index to find where 'house' is and passes that to #slice!)
+
+Question 9 
+
+statement.chars.filter { |c| c == 't' }.size
+
+(Suggested solution is much simpler! I looked at the String#count method but misunderstood the documentation).
+
+Question 10
+
+Both the width of the table and length of the string need to be divided into two, and then the title needs to start at the halfway point minus half its length.
+
+WIDTH = 40
+
+num_spaces_before = (WIDTH / 2) - (title.size / 2)
+
+spaces_before = ''
+
+num_spaces_before.times { spaces_before << ' ' }
+
+puts "#{spaces_before}#{title}"
+
+(Suggested solution uses String#center, a method which centers the text given the width).
+
