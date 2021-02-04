@@ -1,0 +1,25 @@
+Question 1
+
+This will return nil. The variable was not initialized. (And yet it was declared? A bit confusing...)
+
+LS is explaining that a local variable is initialized to nil if in an if statement--even if that particular condition isn't met. So it is nil, but not undeclared (which would throw an error).
+
+Question 2
+
+The result will also be 'hi there' because #<< has mutated the value of the object pointed to by both greetings[:a] and informal_greeting. Those two separate expressions both point to the object which is the value of the :a key in the hash.
+
+Question 3
+
+A. Assignment does not mutate, so the values of one, two, and three will be the same as they originally were before the method call. So "one" "two" and "three" should be output (on separate lines).
+
+B. This is still assigning within the method, just changing it so that string literals are assigned to the method variables rather than references to other variables. The outer values should still not be changed, and "one" "two" "three" should still be output on separate lines.
+
+C. The #gsub! method mutates the string on which it's invoked in place, so now the outer strings should be changed. The output (interpolated on separate lines within their respective strings) should now be "two" "three" "one".
+
+Question 4
+
+I would add a condition before the while loop to return false if dot_separated_words.size != 4
+
+Line 5 should be changed to read return false unless is_an_ip_number?(word).
+
+After passing the initial size check and then 4 iterations of the loop successfully, true can be returned as the number does meet the numeric requirements of an IP number.
