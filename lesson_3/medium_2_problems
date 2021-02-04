@@ -1,0 +1,55 @@
+Question 1
+
+After the first four assignments, a_outer and d_outer are references to the same object (value of 42 (Integer)) and b_outer and c_outer have separate object_ids.
+
+Lines 7-10 assign the object_ids for each object to their respectively named variables; because a_outer and d_outer point to the same object, they'll have the same object_id.
+
+Lines 19-22 are another group of variables declared and initialized to the same object_ids as lines 7-10.
+
+Lines 30-33 feature some reassignment. Now each of these variables (a-d)_outer point to different objects. None of them are the same as their previous objects, and they no longer match the object_ids referenced by the other variables. 
+
+In lines 42-45, new variables (a-d)_inner are declared and initialized so that they reference (point to) the same objects as (a-d)_outer variables now point to.
+
+Lines 47-50 declare and initialize new variables which reference the object_ids of the (a-d)_inner variables.
+
+After the block ends on line 57, the variables declared inside the block--(a-d)_inner and (a-d)_inner_id and (a-d)_outer_inner_id--are no longer in scope and will throw errors, which is why the rescue sections are necessary at the ends of lines 65-68.
+
+Question 2
+
+Lines 2-5 declare and initialize the outer variables. Again since a_outer and c_outer have the same value assigned to them, they'll reference the same object_id.
+
+Lines 7-10 initialize new variables which contain the object_ids for each variable. Since a_outer and d_outer reference the same object, their object_ids are the same and thus a_outer_id and d_outer_id will be assigned the same value.
+
+On line 18, the method is called...and all bets are off!
+
+With the method being invoked, we're now jumping down to line 35. All variables currently in scope are accessible since they've been passed to the an_illustrative_method as arguments.
+
+Lines 37-40: these values should be the same. The references were passed as arguments and are pointing to the same object_ids, and the variables pointing to the object_ids themselves were also passed in as arguments.
+
+Lines 43-46 reassign different values to (a-d)_outer variables. This means that now they will have different object_ids, so the previous set (variables named (a-d)_outer_id) will no longer match the current object_ids.
+
+	***It's important to note that the _outer variable names here within the method are referring to the method parameter variable names. This reassignment is changing where the method variables point to but will not affect the outer _outer variables, which are separate.***
+
+Lines 48-51 are displaying the new object_ids of (a-d)_outer. These will be different than their previous object_ids because of the (re)assignments on lines 43-46.
+
+Lines 54-57 initialize new _inner variables and assign to them the same values as the (a-d)_outer variables, meaning that they'll share the same object_ids as their (a-d)_outer counterparts within the method.
+
+59-62 feature an additional set of new variables which are assigned the value of each _inner variable's object_id.
+
+After returning from the method, only the previously declared variables will be in scope, so any usages of (a-d)_inner or (a-d)_inner_id variables will result in errors. This is why the rescues are necessary for the lines which include _inner(_id) variables but not the ones which only involve the _outer(_id) variables.
+
+Question 3
+
+I believe my_string will remain the same, because the reassignment inside the method doesn't mutate the outer string, but the array will have the second "rutabaga" element appended to it--mutated, so that the outer array also has 2 elements now.
+
+Question 4
+
+This appears to be the reverse: the string is being mutated by the #<< method, while the array is being reassigned within the method and thus the outer array variable will end up unchanged.
+
+Question 5
+
+I'm not sure exactly what's being asked here, but a couple ideas would be to change the name of the function to something more descriptive like add_element_to_second(param1, param2); another option would be to return the variables (perhaps in an array or hash) so that both mutations can be stored. A bang (!) could also be added to the method name to signify mutation, although as currently implemented only the second parameter is mutated.
+
+Question 6
+
+Ruby automatically returns the value of the last line, so it could simply be as follows: color == 'blue' || color == 'green'. This is already a conditional expression which will return true or false, and that one line will allow this method to serve the same function.
