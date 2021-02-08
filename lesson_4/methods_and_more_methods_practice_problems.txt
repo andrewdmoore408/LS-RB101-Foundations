@@ -1,0 +1,39 @@
+1. The return value is [1, 2, 3]. The last statement in the block passed to #select is 'hi,' which is truthy. Since it's always truthy, select will take each element into its collection. Note that it's a new array that's returned although it does has the same elements.
+
+2. Count evaluates the block's truthiness and counts the number of elements in the collection which are truthy in that block. We can find that out by reading the Ruby docs and looking up Array#count.
+
+In this case, the result should be the number 2.
+
+3. Reject is essentially select except that it returns elements which are falsy instead of truthy in a new collection. The return value here would be a new array assigned the value of [1, 2, 3]--puts always returns nil, thus each element is falsy, thus each element is included in the new collection.
+
+4. This will return a new hash will three pairs. The words in the array will be the values, and their first letters will be assigned as the keys, so the returned hash object should be: { 'a' => 'ant', 'b' => 'bear', 'c' => 'cat' }.
+
+The reason for this is that each array element is a string, and using the #[] method with a single integer for a string returns the letter at that position in the string (0-indexed, like an array).
+
+5. Hash#shift removes the first pair (key, value) from a hash and returns it as a 2-element array. (This is the same behavior as Array#shift except that a 2-element array is being returned instead of one item. In both cases, the original collection is mutated and has had its first element or key/value pair removed).
+
+After this code is run, hash will reference the value { b: 'bear'}. A 2-element array referencing [:a, 'ant'] was returned in the last line, but its return value wasn't assigned to an array or used in any way and so it's not accessible.
+
+As always, questions about method behavior can be resolved by consulting the Ruby docs for the relevant Class or Module.
+
+6. This statement should return 11, which is the size/length of the string 'caterpillar'. 
+
+First, Array#pop is invoked on this array, and that method returns the last element of an array (destructively--the array is mutated). Using method chaining, String#size is then invoked on what had been the last element of the array, which is 'caterpillar'. That string has 11 characters in it, so this statement returns 11.
+
+7. The block's return value is true or false depending on whether or not the number it's being passed (the |num| argument for each iteration) is odd or not. If the number is odd, the block returns true; if not, the block returns false.
+
+The Array#any? method being invoked here will return true if any of the items in the array result in the block with which it's invoked returning true. In this case, the any? method will return true because both 1 and 3 are in this array, and they are both odd numbers.
+
+NOTE TO SELF: The #any? method stops iterating once one iteration has resulted in a return value of true--similar to a short-circuit idea of not continuing evaluation once the outcome has been determined.
+
+8. Array#take works by returning a new array with the first n elements (where n is the number that was passed to take as an argument when it was invoked on the original array). It does not mutate the original array, which remains intact.
+
+We can find out as always if uncertain by consulting the Ruby docs. Testing in irb is also helpful to verify understanding.
+
+9. #map returns a new collection with each element transformed using the return value from the block for each item.
+
+I'm not certain exactly what will be returned in the hash here, but I believe the first iteration of the block will return nil (since 'ant' is not > 3 characters, and the second iteration will return 'bear'. I'm not certain exactly what will happen in terms of construction key/value pairs here.
+
+NOTE/CORRECTION: #map always returns an array, which is crucial to note. So even if it's called on a hash, it will return an array. The return value in this case is [nil, 'bear']
+
+10. This code should return a new array like so: [1, nil, nil]. This is because map always returns a new array placing the return value of each iteration into the array. The condition here is num > 1, so both 2 and 3 match that and their indices in the array (elements 1 and 2) are assigned the value nil since that's what the puts method returns. The zeroth element, 1, is assigned its own value since that's what the else part of the if/else statement returns.
