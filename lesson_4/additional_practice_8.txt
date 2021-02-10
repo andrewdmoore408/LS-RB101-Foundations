@@ -1,0 +1,7 @@
+I'm not entirely sure, but I think the first block of code would output an empty array. Each item is being removed as #each iterates through the array, and so there wouldn't be anything left; however, the array itself hasn't been deleted or removed--it's just empty since all the elements have been removed.
+
+The output for the first code would be 1 2 3 4 (all on separate lines).
+
+I believe the second block would return the same thing: an empty array. The output for this one would be the digits in reverse: 4 3 2 1 (all on separate lines).
+
+CORRECTION: I'm mistaken about the way the method is working on the original collection. Rather than working off the original data, it is working off of the collection in real-time, updating information on the length and values. This causes some unexpected behavior.
