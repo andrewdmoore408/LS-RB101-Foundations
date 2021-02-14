@@ -1,0 +1,3 @@
+a will remain 2; b will be [3, 8]
+
+# NOTE: Find lesson/clarification on why the array is mutated but not the simple variable. Is this because integers are immutable and arrays are not?
