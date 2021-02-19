@@ -87,6 +87,8 @@ end
 def joinor(arr, separator = ', ', word = 'or')
   if arr.size == 1
     return arr[0].to_s
+  elsif arr.size == 2
+    return arr.join(" #{word} ")
   end
 
   last_item = arr.pop.to_s
