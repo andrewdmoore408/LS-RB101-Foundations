@@ -48,7 +48,7 @@ def player_places_piece!(board)
   player_choice = ''
 
   loop do
-    prompt "Choose a square: #{empty_squares(board).join(', ')}"
+    prompt "Choose a square: #{joinor(empty_squares(board))}"
     player_choice = gets.chomp.to_i
 
     break if empty_squares(board).include?(player_choice)
@@ -82,6 +82,17 @@ end
 
 def someone_won?(board)
   !!detect_winner(board)
+end
+
+def joinor(arr, separator = ', ', word = 'or')
+  if arr.size == 1
+    return arr[0].to_s
+  end
+
+  last_item = arr.pop.to_s
+  joinor_string = arr.join(separator)
+  joinor_string.concat(separator, word, ' ', last_item)
+  joinor_string
 end
 
 loop do
