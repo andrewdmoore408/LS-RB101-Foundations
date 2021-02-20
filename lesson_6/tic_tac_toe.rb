@@ -1,4 +1,5 @@
 require 'pry'
+require 'pry-byebug'
 
 # Constants for square values
 PLAYER_MARKER = 'X'
@@ -60,8 +61,9 @@ def player_places_piece!(board)
 end
 
 def computer_places_piece!(board)
-  computer_choice = if square_to_defend?(board)
-                      find_threatened_square(board)
+  # byebug
+  computer_choice = if square_to_choose?(board)
+                      find_computer_move(board)
                     else
                       empty_squares(board).sample
                     end
@@ -118,15 +120,15 @@ def display_scores(scores)
   puts
 end
 
-def square_to_defend?(board)
-  !!find_threatened_square(board)
+def square_to_choose?(board)
+  !!find_computer_move(board)
 end
 
-def find_threatened_square(board)
+def select_square(board, marker)
   WINNING_LINES.each do |line|
     squares_arr = board.values_at(*line)
 
-    if squares_arr.count(PLAYER_MARKER) == 2 &&
+    if squares_arr.count(marker) == 2 &&
        squares_arr.count(INITIAL_MARKER) == 1
       line.each do |square_num|
         return square_num if board[square_num] == INITIAL_MARKER
@@ -135,6 +137,14 @@ def find_threatened_square(board)
   end
 
   nil
+end
+
+def find_computer_move(board)
+  computer_choice = select_square(board, COMPUTER_MARKER)
+
+  computer_choice ||= select_square(board, PLAYER_MARKER)
+
+  computer_choice
 end
 
 # Main loop
