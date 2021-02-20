@@ -60,14 +60,12 @@ def player_places_piece!(board)
 end
 
 def computer_places_piece!(board)
-  computer_choice = nil
+  computer_choice = if square_to_defend?(board)
+                      find_threatened_square(board)
+                    else
+                      empty_squares(board).sample
+                    end
 
-  if square_to_defend?(board)
-    computer_choice = find_threatened_square(board)
-  else
-    computer_choice = empty_squares(board).sample
-  end
-  
   board[computer_choice] = COMPUTER_MARKER
 end
 
@@ -88,7 +86,7 @@ def detect_winner_game(board)
 end
 
 def detect_winner_round(scores)
-  winner_arr = scores.select { |k, v| v == 5 }.to_a
+  winner_arr = scores.select { |_, v| v == 5 }.to_a
   round_winner = winner_arr.flatten.first
   round_winner
 end
@@ -127,8 +125,9 @@ end
 def find_threatened_square(board)
   WINNING_LINES.each do |line|
     squares_arr = board.values_at(*line)
-    
-    if squares_arr.count(PLAYER_MARKER) == 2 && squares_arr.count(INITIAL_MARKER) == 1
+
+    if squares_arr.count(PLAYER_MARKER) == 2 &&
+       squares_arr.count(INITIAL_MARKER) == 1
       line.each do |square_num|
         return square_num if board[square_num] == INITIAL_MARKER
       end
@@ -137,15 +136,15 @@ def find_threatened_square(board)
 
   nil
 end
+
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
-
   games_won = { 'Player' => 0, 'Computer' => 0 }
   round_winner = nil
   play_another_game = nil
 
-  # Start of a game 
+  # Start of a game
   loop do
     board = initialize_board
 
@@ -183,7 +182,7 @@ loop do
     break unless play_another_game.start_with?('y')
   end
 
-  # Quit the main loop if player already asked to quit 
+  # Quit the main loop if player already asked to quit
   break unless play_another_game.start_with?('y')
 
   prompt "#{round_winner} won the round!"
