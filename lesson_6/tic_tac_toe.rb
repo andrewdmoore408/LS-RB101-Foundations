@@ -60,7 +60,14 @@ def player_places_piece!(board)
 end
 
 def computer_places_piece!(board)
-  computer_choice = empty_squares(board).sample
+  computer_choice = nil
+
+  if square_to_defend?(board)
+    computer_choice = find_threatened_square(board)
+  else
+    computer_choice = empty_squares(board).sample
+  end
+  
   board[computer_choice] = COMPUTER_MARKER
 end
 
@@ -113,6 +120,23 @@ def display_scores(scores)
   puts
 end
 
+def square_to_defend?(board)
+  !!find_threatened_square(board)
+end
+
+def find_threatened_square(board)
+  WINNING_LINES.each do |line|
+    squares_arr = board.values_at(*line)
+    
+    if squares_arr.count(PLAYER_MARKER) == 2 && squares_arr.count(INITIAL_MARKER) == 1
+      line.each do |square_num|
+        return square_num if board[square_num] == INITIAL_MARKER
+      end
+    end
+  end
+
+  nil
+end
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
