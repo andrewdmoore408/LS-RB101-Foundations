@@ -121,7 +121,7 @@ def display_scores(scores)
 end
 
 def square_to_choose?(board)
-  !!find_computer_move(board)
+  !!find_computer_move(board) 
 end
 
 def select_square(board, marker)
@@ -143,6 +143,10 @@ def find_computer_move(board)
   computer_choice = select_square(board, COMPUTER_MARKER)
 
   computer_choice ||= select_square(board, PLAYER_MARKER)
+
+  if computer_choice == nil && empty_squares(board).include?(5)
+    computer_choice = 5
+  end
 
   computer_choice
 end
