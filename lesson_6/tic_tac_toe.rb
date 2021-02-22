@@ -11,6 +11,8 @@ WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]]              # diagonals
 
+FIRST_PLAYER = "Player"
+
 def prompt(msg)
   puts "=>  #{msg}"
 end
@@ -151,6 +153,25 @@ def find_computer_move(board)
   computer_choice
 end
 
+def current_player_places_piece!(board, current_player)
+  if current_player == "Player"
+    player_places_piece!(board)
+  else
+    computer_places_piece!(board)
+  end
+end
+
+# Set player order
+if FIRST_PLAYER == "Choose"
+  prompt "Which player will be player one? Input 'p' for player, otherwise computer will play first"
+  answer = gets.chomp.downcase
+  PLAYER_ONE = (answer.start_with?('p') ? "Player" : "Computer")
+else
+  PLAYER_ONE = FIRST_PLAYER
+end
+  
+PLAYER_TWO = (PLAYER_ONE == "Player" ? "Computer" : "Player")
+
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
@@ -165,10 +186,14 @@ loop do
     loop do
       display_board(board)
 
-      player_places_piece!(board)
+      current_player_places_piece!(board, PLAYER_ONE)
+      #player_places_piece!(board)
       break if someone_won_game?(board) || board_full?(board)
 
-      computer_places_piece!(board)
+      display_board(board)
+
+      current_player_places_piece!(board, PLAYER_TWO)
+      #computer_places_piece!(board)
       break if someone_won_game?(board) || board_full?(board)
     end
 
