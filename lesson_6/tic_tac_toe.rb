@@ -6,12 +6,69 @@ PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
 INITIAL_MARKER = ' '
 
-# Constant for winning condition
-WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
-                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
-                [[1, 5, 9], [3, 5, 7]]              # diagonals
+GAMES_TO_WIN_A_ROUND = 5                
+
+BOARD_SIDE_LENGTH = 5
+BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH ** 2
+
+THREATENING_NUM_SQUARES = BOARD_SIDE_LENGTH - 1
+
+CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
 
 FIRST_PLAYER = "Choose"
+
+# Constant for winning condition
+#WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
+#                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
+#                [[1, 5, 9], [3, 5, 7]]              # diagonals
+
+def calculate_winning_lines(length = BOARD_SIDE_LENGTH)
+  lines = []
+
+  # add winning rows
+  (0...length).each do |row_offset|
+    row = []
+    (1..length).each do |square|
+      row.push(row_offset * length + square)
+    end  
+    lines.push(row)
+  end  
+  
+  # add winning columns
+  (1..length).each do |square|
+    column = []
+    (0...length).each do |column_offset|
+      column.push(column_offset * length + square)
+    end
+    lines.push(column)
+  end
+
+  # add diagonals
+  # down_diagonal goes from top left to bottom right of board
+  # up_diagonal goes from bottom left to top right
+  down_diagonal_square = 1
+  up_diagonal_square = length
+
+  down_diagonal_line = [down_diagonal_square]
+  up_diagonal_line = [up_diagonal_square]
+
+  down_diagonal_shift = length + 1
+  up_diagonal_shift = length - 1
+
+  (1...length).each do |_|
+    down_diagonal_square += down_diagonal_shift
+    up_diagonal_square += up_diagonal_shift
+
+    down_diagonal_line.push(down_diagonal_square)
+    up_diagonal_line.push(up_diagonal_square)
+  end
+
+  lines.push(down_diagonal_line, up_diagonal_line)
+
+  lines
+end
+
+WINNING_LINES = calculate_winning_lines
 
 def prompt(msg)
   puts "=>  #{msg}"
@@ -19,15 +76,43 @@ end
 
 def initialize_board
   new_board = {}
-  (1..9).each { |num| new_board[num] = INITIAL_MARKER }
+  (1..BOARD_NUM_SQUARES).each { |num| new_board[num] = INITIAL_MARKER }
   new_board
 end
 
+def get_blank_row_arr
+  row = []
+  4.times { |num| row.push('') }
+  row
+end
+
 # rubocop: disable Metrics/AbcSize
-def display_board(squares)
+def display_board(board)
   system 'clear'
   puts "You play #{PLAYER_MARKER}. Computer plays #{COMPUTER_MARKER}."
   puts
+
+  board_arr = []
+
+  BOARD_SIDE_LENGTH.times do |row|
+    row_offset = (row) * BOARD_SIDE_LENGTH
+    
+    row_arr = get_blank_row_arr
+    # binding.pry
+
+    BOARD_SIDE_LENGTH.times do |square|
+        row_arr[0] += '       |'
+        row_arr[1] += "   #{board[ row_offset + square + 1 ]}   |"
+        row_arr[2] += '       |'
+        row_arr[3] += '-------+'
+    end
+
+    # byebug
+    board_arr << row_arr
+  end
+  # byebug
+  puts board_arr
+=begin
   puts "     |     |     "
   puts "  #{squares[1]}  |  #{squares[2]}  |  #{squares[3]}  "
   puts "     |     |     "
@@ -40,6 +125,7 @@ def display_board(squares)
   puts "  #{squares[7]}  |  #{squares[8]}  |  #{squares[9]}  "
   puts "     |     |     "
   puts
+=end
 end
 # rubocop: enable Metrics/AbcSize
 
@@ -90,7 +176,7 @@ def detect_winner_game(board)
 end
 
 def detect_winner_round(scores)
-  winner_arr = scores.select { |_, v| v == 5 }.to_a
+  winner_arr = scores.select { |_, v| v == GAMES_TO_WIN_A_ROUND }.to_a
   round_winner = winner_arr.flatten.first
   round_winner
 end
@@ -130,7 +216,7 @@ def select_square(board, marker)
   WINNING_LINES.each do |line|
     squares_arr = board.values_at(*line)
 
-    if squares_arr.count(marker) == 2 &&
+    if squares_arr.count(marker) == THREATENING_NUM_SQUARES &&
        squares_arr.count(INITIAL_MARKER) == 1
       line.each do |square_num|
         return square_num if board[square_num] == INITIAL_MARKER
@@ -146,8 +232,8 @@ def find_computer_move(board)
 
   computer_choice ||= select_square(board, PLAYER_MARKER)
 
-  if computer_choice.nil? && empty_squares(board).include?(5)
-    computer_choice = 5
+  if computer_choice.nil? && empty_squares(board).include?(CENTER_SQUARE)
+    computer_choice = CENTER_SQUARE
   end
 
   computer_choice
