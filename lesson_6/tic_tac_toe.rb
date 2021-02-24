@@ -3,7 +3,10 @@ require 'pry-byebug'
 
 # Constants for square values
 PLAYER_MARKER = 'X'
-COMPUTER_MARKER = 'O'
+COMPUTER_MARKER_ONE = 'O'
+COMPUTER_MARKER_TWO = 'L'
+COMPUTER_MARKERS = { 'Computer1' => COMPUTER_MARKER_ONE,
+                     'Computer2' => COMPUTER_MARKER_TWO }
 INITIAL_MARKER = ' '
 
 GAMES_TO_WIN_A_ROUND = 5
@@ -11,7 +14,7 @@ GAMES_TO_WIN_A_ROUND = 5
 BOARD_SIDE_LENGTH = 5
 BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
 
-THREATENING_NUM_SQUARES = BOARD_SIDE_LENGTH - 1
+LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
 
 CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
 
@@ -50,8 +53,8 @@ def calculate_winning_columns(length)
 end
 
 def calculate_winning_diagonals(length)
-  # down_diagonal goes from top left to bottom right of board
-  # up_diagonal goes from bottom left to top right
+  # down_diagonal is constructed from top left to bottom right of board
+  # up_diagonal is constructed from top right to bottom left of board
   down_diagonal_square = 1
   up_diagonal_square = length
 
@@ -72,7 +75,9 @@ def calculate_winning_diagonals(length)
   [down_diagonal_line, up_diagonal_line]
 end
 
-def calculate_winning_lines(length = BOARD_SIDE_LENGTH)
+def calculate_winning_lines
+  length = BOARD_SIDE_LENGTH
+
   lines = []
 
   rows = calculate_winning_rows(length)
@@ -100,13 +105,19 @@ end
 
 def initialize_row_arr
   row = []
-  4.times { |_| row.push('') }
+  4.times { |_| row.push('|') }
+
   row
 end
 
-def display_board(board)
+def initialize_display
   system 'clear'
-  puts "You play #{PLAYER_MARKER}. Computer plays #{COMPUTER_MARKER}.\n"
+  puts "You play #{PLAYER_MARKER}. Computer 1 plays #{COMPUTER_MARKER_ONE}. " \
+       "Computer 2 plays #{COMPUTER_MARKER_TWO}.\n"
+end
+
+def display_board(board)
+  initialize_display
 
   board_arr = []
 
@@ -146,32 +157,36 @@ def player_places_piece!(board)
   board[player_choice] = PLAYER_MARKER
 end
 
-def computer_places_piece!(board)
+def computer_places_piece!(board, computer_name)
   # byebug
-  computer_choice = if square_to_choose?(board)
-                      find_computer_move(board)
+  computer_choice = if square_to_choose?(board, computer_name)
+                      find_computer_move(board, computer_name)
                     else
                       empty_squares(board).sample
                     end
 
-  board[computer_choice] = COMPUTER_MARKER
+  board[computer_choice] = COMPUTER_MARKERS[computer_name]
 end
 
 def board_full?(board)
   empty_squares(board).empty?
 end
 
+# rubocop:disable Metrics/CyclomaticComplexity
 def detect_winner_game(board)
   WINNING_LINES.each do |line|
     if line.all? { |square| board[square] == PLAYER_MARKER }
       return "Player"
-    elsif line.all? { |square| board[square] == COMPUTER_MARKER }
-      return "Computer"
+    elsif line.all? { |square| board[square] == COMPUTER_MARKER_ONE }
+      return "Computer1"
+    elsif line.all? { |square| board[square] == COMPUTER_MARKER_TWO }
+      return "Computer2"
     end
   end
 
   nil
 end
+# rubocop:enable Metrics/CyclomaticComplexity
 
 def detect_winner_round(scores)
   winner_arr = scores.select { |_, v| v == GAMES_TO_WIN_A_ROUND }.to_a
@@ -202,19 +217,20 @@ end
 
 def display_scores(scores)
   prompt "The scores for this round:"
-  prompt "Player: #{scores['Player']}\tComputer: #{scores['Computer']}"
+  prompt "Player: #{scores['Player']}\tComputer 1: #{scores['Computer1']}\t" \
+         "Computer 2: #{scores['Computer2']}"
   puts
 end
 
-def square_to_choose?(board)
-  !!find_computer_move(board)
+def square_to_choose?(board, current_player)
+  !!find_computer_move(board, current_player)
 end
 
 def select_square(board, marker)
   WINNING_LINES.each do |line|
     squares_arr = board.values_at(*line)
 
-    if squares_arr.count(marker) == THREATENING_NUM_SQUARES &&
+    if squares_arr.count(marker) == LINE_ALMOST_COMPLETE &&
        squares_arr.count(INITIAL_MARKER) == 1
       line.each do |square_num|
         return square_num if board[square_num] == INITIAL_MARKER
@@ -225,10 +241,15 @@ def select_square(board, marker)
   nil
 end
 
-def find_computer_move(board)
-  computer_choice = select_square(board, COMPUTER_MARKER)
+def find_computer_move(board, computer_name)
+  # AI offense: try to win
+  computer_choice = select_square(board, COMPUTER_MARKERS[computer_name])
 
+  # AI defense: try to block other players
   computer_choice ||= select_square(board, PLAYER_MARKER)
+
+  other_computer = (computer_name == 'Computer1' ? 'Computer2' : 'Computer1')
+  computer_choice ||= select_square(board, COMPUTER_MARKERS[other_computer])
 
   if computer_choice.nil? && empty_squares(board).include?(CENTER_SQUARE)
     computer_choice = CENTER_SQUARE
@@ -237,16 +258,20 @@ def find_computer_move(board)
   computer_choice
 end
 
-def current_player_places_piece!(board, current_player)
+def place_piece!(board, current_player)
   if current_player == "Player"
     player_places_piece!(board)
   else
-    computer_places_piece!(board)
+    computer_places_piece!(board, current_player)
   end
 end
 
 def alternate_player(current_player)
-  current_player == "Player" ? "Computer" : "Player"
+  case current_player
+  when "Player" then "Computer1"
+  when "Computer1" then "Computer2"
+  when "Computer2" then "Player"
+  end
 end
 
 # Set player order
@@ -254,17 +279,15 @@ if FIRST_PLAYER == "Choose"
   prompt "Which player will be player one?"
   prompt "Input 'p' for player, otherwise computer will play first"
   answer = gets.chomp.downcase
-  PLAYER_ONE = (answer.start_with?('p') ? "Player" : "Computer")
+  PLAYER_ONE = (answer.start_with?('p') ? "Player" : "Computer1")
 else
   PLAYER_ONE = FIRST_PLAYER
 end
 
-PLAYER_TWO = (PLAYER_ONE == "Player" ? "Computer" : "Player")
-
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
-  games_won = { 'Player' => 0, 'Computer' => 0 }
+  current_round_scores = { 'Player' => 0, 'Computer1' => 0, 'Computer2' => 0 }
   round_winner = nil
   play_another_game = nil
 
@@ -276,7 +299,7 @@ loop do
     loop do
       display_board(board)
 
-      current_player_places_piece!(board, current_player)
+      place_piece!(board, current_player)
       current_player = alternate_player(current_player)
 
       break if someone_won_game?(board) || board_full?(board)
@@ -287,16 +310,16 @@ loop do
     if someone_won_game?(board)
       winner = detect_winner_game(board)
       prompt "#{winner} won!"
-      games_won[winner] += 1
+      current_round_scores[winner] += 1
     else
       prompt "It's a tie..."
     end
 
-    display_scores(games_won)
+    display_scores(current_round_scores)
 
     # Break out of the round loop if someone won enough games
-    if someone_won_round?(games_won)
-      round_winner = detect_winner_round(games_won)
+    if someone_won_round?(current_round_scores)
+      round_winner = detect_winner_round(current_round_scores)
       break
     end
 
