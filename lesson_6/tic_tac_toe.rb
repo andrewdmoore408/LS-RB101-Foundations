@@ -11,12 +11,12 @@ INITIAL_MARKER = ' '
 
 GAMES_TO_WIN_A_ROUND = 5
 
-BOARD_SIDE_LENGTH = 5
-BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
+# BOARD_SIDE_LENGTH = 3
+# BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
 
-LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
+# LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
 
-CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
+# CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
 
 FIRST_PLAYER = "Choose"
 
@@ -91,8 +91,6 @@ def calculate_winning_lines
   lines
 end
 
-WINNING_LINES = calculate_winning_lines
-
 def prompt(msg)
   puts "=>  #{msg}"
 end
@@ -103,7 +101,7 @@ def initialize_board
   new_board
 end
 
-def initialize_row_arr
+def initialize_board_row_arr
   row = []
   4.times { |_| row.push('|') }
 
@@ -123,7 +121,7 @@ def display_board(board)
 
   BOARD_SIDE_LENGTH.times do |row|
     row_offset = (row) * BOARD_SIDE_LENGTH
-    row_arr = initialize_row_arr
+    row_arr = initialize_board_row_arr
 
     BOARD_SIDE_LENGTH.times do |square|
       row_arr[0] += '       |'
@@ -209,8 +207,10 @@ def joinor(arr, separator = ', ', word = 'or')
     return arr.join(" #{word} ")
   end
 
-  last_item = arr.pop.to_s
-  joinor_string = arr.join(separator)
+  joinor_array = arr.dup
+
+  last_item = joinor_array.pop.to_s
+  joinor_string = joinor_array.join(separator)
   joinor_string.concat(separator, word, ' ', last_item)
   joinor_string
 end
@@ -274,19 +274,49 @@ def alternate_player(current_player)
   end
 end
 
-# Set player order
-if FIRST_PLAYER == "Choose"
-  prompt "Which player will be player one?"
-  prompt "Input 'p' for player, otherwise computer will play first"
-  answer = gets.chomp.downcase
-  PLAYER_ONE = (answer.start_with?('p') ? "Player" : "Computer1")
-else
-  PLAYER_ONE = FIRST_PLAYER
+def decide_player_one
+  if FIRST_PLAYER == "Choose"
+    prompt "Which player will be player one?"
+    prompt "Input 'p' for player—-otherwise computer will play first"
+    answer = gets.chomp.downcase
+
+    answer.start_with?('p') ? "Player" : "Computer1"
+  else
+    FIRST_PLAYER
+  end
 end
 
+def decide_board_size
+  options = [3, 5, 7, 9]
+  
+  board_size = nil
+
+  loop do
+    prompt "How big would you like each side of the board to be? Choose #{joinor(options)}"
+    board_size = gets.chomp.to_i
+
+    break if options.include?(board_size)
+  
+    prompt "That number is not valid. Please enter a valid side length for the board."
+    puts
+  end
+
+  board_size
+end
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
+
+  PLAYER_ONE = decide_player_one
+  BOARD_SIDE_LENGTH = decide_board_size
+  BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
+
+  LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
+
+  CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
+
+  WINNING_LINES = calculate_winning_lines
+
   current_round_scores = { 'Player' => 0, 'Computer1' => 0, 'Computer2' => 0 }
   round_winner = nil
   play_another_game = nil
