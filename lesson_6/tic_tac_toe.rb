@@ -12,7 +12,7 @@ INITIAL_MARKER = ' '
 
 GAMES_TO_WIN_A_ROUND = 3
 
-FIRST_PLAYER = "Player"
+FIRST_PLAYER = "Choose"
 
 def calculate_winning_rows(length)
   rows = []
@@ -166,10 +166,10 @@ def player_places_piece!(board)
   board[player_choice] = PLAYER_MARKER
 end
 
-def computer_places_piece!(board, computer_name)
+def computer_places_piece!(board, computer_name, num_computers)
   # byebug
-  computer_choice = if square_to_choose?(board, computer_name)
-                      find_computer_move(board, computer_name)
+  computer_choice = if square_to_choose?(board, computer_name, num_computers)
+                      find_computer_move(board, computer_name, num_computers)
                     else
                       empty_squares(board).sample
                     end
@@ -241,8 +241,8 @@ def display_scores(scores)
   puts
 end
 
-def square_to_choose?(board, current_player)
-  !!find_computer_move(board, current_player)
+def square_to_choose?(board, current_player, num_computers)
+  !!find_computer_move(board, current_player, num_computers)
 end
 
 def select_square(board, marker)
@@ -260,14 +260,14 @@ def select_square(board, marker)
   nil
 end
 
-def find_computer_move(board, computer_name)
+def find_computer_move(board, computer_name, num_computers)
   # AI offense: try to win
   computer_choice = select_square(board, MARKERS[computer_name])
 
   # AI defense: try to block other PLAYERS
   computer_choice ||= select_square(board, PLAYER_MARKER)
 
-  if NUM_COMPUTERS == 2
+  if num_computers == 2
     other_computer = (computer_name == 'Computer0' ? 'Computer1' : 'Computer0')
     computer_choice ||= select_square(board, MARKERS[other_computer])
   end
@@ -279,11 +279,11 @@ def find_computer_move(board, computer_name)
   computer_choice
 end
 
-def place_piece!(board, current_player)
+def place_piece!(board, current_player, num_computers)
   if current_player == "Player"
     player_places_piece!(board)
   else
-    computer_places_piece!(board, current_player)
+    computer_places_piece!(board, current_player, num_computers)
   end
 end
 
@@ -350,20 +350,12 @@ def initialize_round_scores
   round_scores
 end
 
-def initialize_players(first_player)
+def initialize_players(first_player, num_computers)
   player_names = [first_player]
 
-  if NUM_COMPUTERS == 2 && first_player.start_with?('Computer')
-    # rubocop:disable Layout/LineLength
-    names_to_push = (rand(2).odd? ? ["Player", "Computer1"] : ["Computer1", "Player"])
-    # rubocop:enable Layout/LineLength
-  elsif NUM_COMPUTERS == 1 && first_player.start_with?('Computer')
-    names_to_push = ["Player"]
-  else
-    names_to_push = ["Computer0"]
-  end
+  additional_players = determine_additional_players(first_player, num_computers)
 
-  player_names.push(*names_to_push)
+  player_names.push(*additional_players)
 
   players = []
   player_names.each do |name|
@@ -373,14 +365,38 @@ def initialize_players(first_player)
   players
 end
 
-# Main loop
-# Start of a round (best of 5 games wins)
+# rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+def determine_additional_players(first_player, num_computers)
+  if num_computers == 2 && first_player.start_with?('Computer')
+    additional_players = if rand(2).odd?
+                           ["Player", "Computer1"]
+                         else
+                           ["Computer1", "Player"]
+                         end
+  elsif num_computers == 2 && first_player.start_with?('Player')
+    additional_players = ["Computer0", "Computer1"]
+  elsif num_computers == 1 && first_player.start_with?('Computer')
+    additional_players = ["Player"]
+  else
+    additional_players = ["Computer0"]
+  end
+
+  additional_players
+end
+# rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+# -----------------------------------------------------------------------------
+# Main game loop
+# -----------------------------------------------------------------------------
+# Start of a round (best of GAMES_TO_WIN_A_ROUND wins)
 loop do
+  system 'clear'
+
   player_one_name = decide_player_one
 
-  NUM_COMPUTERS = decide_number_computer_players
+  num_computers = decide_number_computer_players
 
-  PLAYERS = initialize_players(player_one_name)
+  PLAYERS = initialize_players(player_one_name, num_computers)
 
   board_side_length = decide_board_size
   board_num_squares = board_side_length**2
@@ -405,7 +421,7 @@ loop do
     loop do
       display_board(board, board_side_length)
 
-      place_piece!(board, current_player)
+      place_piece!(board, current_player, num_computers)
       current_player_index = alternate_player(current_player_index)
       current_player = PLAYERS[current_player_index][:name]
 
