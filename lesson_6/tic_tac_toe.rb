@@ -167,7 +167,6 @@ def player_places_piece!(board)
 end
 
 def computer_places_piece!(board, computer_name, num_computers)
-  # byebug
   computer_choice = if square_to_choose?(board, computer_name, num_computers)
                       find_computer_move(board, computer_name, num_computers)
                     else
@@ -181,14 +180,13 @@ def board_full?(board)
   empty_squares(board).empty?
 end
 
-# rubocop:disable Metrics/CyclomaticComplexity
 def detect_winner_game(board)
   WINNING_LINES.each do |line|
-    if line.all? { |square| board[square] == PLAYER_MARKER }
+    if all_squares_match(board, line, PLAYER_MARKER)
       return "Player"
-    elsif line.all? { |square| board[square] == COMPUTER_MARKER_ZERO }
+    elsif all_squares_match(board, line, COMPUTER_MARKER_ZERO)
       return "Computer0"
-    elsif line.all? { |square| board[square] == COMPUTER_MARKER_ONE }
+    elsif all_squares_match(board, line, COMPUTER_MARKER_ONE)
       return "Computer1"
     end
   end
@@ -196,7 +194,9 @@ def detect_winner_game(board)
   nil
 end
 
-# rubocop:enable Metrics/CyclomaticComplexity
+def all_squares_match(board, line, marker)
+  line.all? { |square| board[square] == marker }
+end
 
 def detect_winner_round(scores)
   winner_arr = scores.select { |_, v| v == GAMES_TO_WIN_A_ROUND }.to_a
