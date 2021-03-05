@@ -3,20 +3,14 @@ require 'pry-byebug'
 
 # Constants for square values
 PLAYER_MARKER = 'X'
-COMPUTER_MARKER_ONE = 'O'
-COMPUTER_MARKER_TWO = 'L'
-COMPUTER_MARKERS = { 'Computer1' => COMPUTER_MARKER_ONE,
-                     'Computer2' => COMPUTER_MARKER_TWO }
+COMPUTER_MARKER_ZERO = 'O'
+COMPUTER_MARKER_ONE = 'L'
+MARKERS = { 'Player' => 'X',
+            'Computer0' => COMPUTER_MARKER_ZERO,
+            'Computer1' => COMPUTER_MARKER_ONE }
 INITIAL_MARKER = ' '
 
-GAMES_TO_WIN_A_ROUND = 5
-
-# BOARD_SIDE_LENGTH = 3
-# BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
-
-# LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
-
-# CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
+GAMES_TO_WIN_A_ROUND = 3
 
 FIRST_PLAYER = "Choose"
 
@@ -75,14 +69,12 @@ def calculate_winning_diagonals(length)
   [down_diagonal_line, up_diagonal_line]
 end
 
-def calculate_winning_lines
-  length = BOARD_SIDE_LENGTH
-
+def calculate_winning_lines(board_side_length)
   lines = []
 
-  rows = calculate_winning_rows(length)
-  columns = calculate_winning_columns(length)
-  diagonals = calculate_winning_diagonals(length)
+  rows = calculate_winning_rows(board_side_length)
+  columns = calculate_winning_columns(board_side_length)
+  diagonals = calculate_winning_diagonals(board_side_length)
 
   rows.each { |row| lines.push(row) }
   columns.each { |column| lines.push(column) }
@@ -95,9 +87,9 @@ def prompt(msg)
   puts "=>  #{msg}"
 end
 
-def initialize_board
+def initialize_board(board_num_squares)
   new_board = {}
-  (1..BOARD_NUM_SQUARES).each { |num| new_board[num] = INITIAL_MARKER }
+  (1..board_num_squares).each { |num| new_board[num] = INITIAL_MARKER }
   new_board
 end
 
@@ -108,22 +100,41 @@ def initialize_board_row_arr
   row
 end
 
-def initialize_display
+def display_header
   system 'clear'
-  puts "You play #{PLAYER_MARKER}. Computer 1 plays #{COMPUTER_MARKER_ONE}. " \
-       "Computer 2 plays #{COMPUTER_MARKER_TWO}.\n"
+
+  header_string = ""
+
+  PLAYERS.each do |player|
+    player_name = player[:name]
+    header_string += "#{player_name} plays #{MARKERS[player_name]}.  "
+  end
+
+  puts header_string
 end
 
-def display_board(board)
-  initialize_display
+def calculate_top_row(row_length)
+  top_row = ['|']
+
+  row_length.times do |_|
+    top_row[0] += '-------+'
+  end
+
+  top_row
+end
+
+def display_board(board, board_side_length)
+  display_header
 
   board_arr = []
 
-  BOARD_SIDE_LENGTH.times do |row|
-    row_offset = (row) * BOARD_SIDE_LENGTH
+  board_arr << calculate_top_row(board_side_length)
+
+  board_side_length.times do |row|
+    row_offset = (row) * board_side_length
     row_arr = initialize_board_row_arr
 
-    BOARD_SIDE_LENGTH.times do |square|
+    board_side_length.times do |square|
       row_arr[0] += '       |'
       row_arr[1] += "   #{board[row_offset + square + 1]}   |"
       row_arr[2] += '       |'
@@ -163,7 +174,7 @@ def computer_places_piece!(board, computer_name)
                       empty_squares(board).sample
                     end
 
-  board[computer_choice] = COMPUTER_MARKERS[computer_name]
+  board[computer_choice] = MARKERS[computer_name]
 end
 
 def board_full?(board)
@@ -175,15 +186,16 @@ def detect_winner_game(board)
   WINNING_LINES.each do |line|
     if line.all? { |square| board[square] == PLAYER_MARKER }
       return "Player"
+    elsif line.all? { |square| board[square] == COMPUTER_MARKER_ZERO }
+      return "Computer0"
     elsif line.all? { |square| board[square] == COMPUTER_MARKER_ONE }
       return "Computer1"
-    elsif line.all? { |square| board[square] == COMPUTER_MARKER_TWO }
-      return "Computer2"
     end
   end
 
   nil
 end
+
 # rubocop:enable Metrics/CyclomaticComplexity
 
 def detect_winner_round(scores)
@@ -217,8 +229,15 @@ end
 
 def display_scores(scores)
   prompt "The scores for this round:"
-  prompt "Player: #{scores['Player']}\tComputer 1: #{scores['Computer1']}\t" \
-         "Computer 2: #{scores['Computer2']}"
+
+  scores_string = ""
+
+  scores.each do |name, score|
+    scores_string += "#{name}: #{score}\t"
+  end
+
+  prompt scores_string
+
   puts
 end
 
@@ -243,13 +262,15 @@ end
 
 def find_computer_move(board, computer_name)
   # AI offense: try to win
-  computer_choice = select_square(board, COMPUTER_MARKERS[computer_name])
+  computer_choice = select_square(board, MARKERS[computer_name])
 
-  # AI defense: try to block other players
+  # AI defense: try to block other PLAYERS
   computer_choice ||= select_square(board, PLAYER_MARKER)
 
-  other_computer = (computer_name == 'Computer1' ? 'Computer2' : 'Computer1')
-  computer_choice ||= select_square(board, COMPUTER_MARKERS[other_computer])
+  if NUM_COMPUTERS == 2
+    other_computer = (computer_name == 'Computer0' ? 'Computer1' : 'Computer0')
+    computer_choice ||= select_square(board, MARKERS[other_computer])
+  end
 
   if computer_choice.nil? && empty_squares(board).include?(CENTER_SQUARE)
     computer_choice = CENTER_SQUARE
@@ -266,12 +287,10 @@ def place_piece!(board, current_player)
   end
 end
 
-def alternate_player(current_player)
-  case current_player
-  when "Player" then "Computer1"
-  when "Computer1" then "Computer2"
-  when "Computer2" then "Player"
-  end
+def alternate_player(player_index)
+  next_turn_index = (PLAYERS[player_index + 1].nil? ? 0 : player_index + 1)
+
+  next_turn_index
 end
 
 def decide_player_one
@@ -280,7 +299,7 @@ def decide_player_one
     prompt "Input 'p' for player—-otherwise computer will play first"
     answer = gets.chomp.downcase
 
-    answer.start_with?('p') ? "Player" : "Computer1"
+    answer.start_with?('p') ? "Player" : "Computer0"
   else
     FIRST_PLAYER
   end
@@ -288,54 +307,110 @@ end
 
 def decide_board_size
   options = [3, 5, 7, 9]
-  
+
   board_size = nil
 
   loop do
-    prompt "How big would you like each side of the board to be? Choose #{joinor(options)}"
+    prompt "How big would you like each side of the board to be? " \
+           "(#{joinor(options)})"
     board_size = gets.chomp.to_i
 
     break if options.include?(board_size)
-  
-    prompt "That number is not valid. Please enter a valid side length for the board."
+
+    prompt "That number is not valid." \
+          "Please enter a valid side length for the board."
     puts
   end
 
   board_size
 end
+
+def decide_number_computer_players
+  puts
+  prompt "How many computer opponents would you like to face?"
+  prompt "Input 2 to select 2--otherwise you will face 1"
+
+  answer = gets.chomp.to_i
+
+  num_computers = answer == 2 ? 2 : 1
+
+  num_computers
+end
+
+def initialize_round_scores
+  round_scores = {}
+
+  PLAYERS.each do |player|
+    player_name = player[:name]
+    round_scores[player_name] = 0
+  end
+
+  round_scores
+end
+
+def initialize_players(first_player)
+  player_names = [first_player]
+
+  if NUM_COMPUTERS == 2 && first_player.start_with?('Computer')
+    # rubocop:disable Layout/LineLength
+    names_to_push = (rand(2).odd? ? ["Player", "Computer1"] : ["Computer1", "Player"])
+    # rubocop:enable Layout/LineLength
+  elsif NUM_COMPUTERS == 1 && first_player.start_with?('Computer')
+    names_to_push = ["Player"]
+  else
+    names_to_push = ["Computer0"]
+  end
+
+  player_names.push(*names_to_push)
+
+  players = []
+  player_names.each do |name|
+    players.push({ name: name.to_s, score: 0 })
+  end
+
+  players
+end
+
 # Main loop
 # Start of a round (best of 5 games wins)
 loop do
+  player_one_name = decide_player_one
 
-  PLAYER_ONE = decide_player_one
-  BOARD_SIDE_LENGTH = decide_board_size
-  BOARD_NUM_SQUARES = BOARD_SIDE_LENGTH**2
+  NUM_COMPUTERS = decide_number_computer_players
 
-  LINE_ALMOST_COMPLETE = BOARD_SIDE_LENGTH - 1
+  PLAYERS = initialize_players(player_one_name)
 
-  CENTER_SQUARE = (BOARD_NUM_SQUARES / 2.0).round
+  board_side_length = decide_board_size
+  board_num_squares = board_side_length**2
 
-  WINNING_LINES = calculate_winning_lines
+  LINE_ALMOST_COMPLETE = board_side_length - 1
 
-  current_round_scores = { 'Player' => 0, 'Computer1' => 0, 'Computer2' => 0 }
+  CENTER_SQUARE = (board_num_squares / 2.0).round
+
+  WINNING_LINES = calculate_winning_lines(board_side_length)
+
+  current_round_scores = initialize_round_scores
+
   round_winner = nil
   play_another_game = nil
 
   # Start of a game
   loop do
-    board = initialize_board
-    current_player = PLAYER_ONE
+    board = initialize_board(board_num_squares)
+    current_player_index = 0
+    current_player = PLAYERS[current_player_index][:name]
 
     loop do
-      display_board(board)
+      display_board(board, board_side_length)
 
       place_piece!(board, current_player)
-      current_player = alternate_player(current_player)
+      current_player_index = alternate_player(current_player_index)
+      current_player = PLAYERS[current_player_index][:name]
 
       break if someone_won_game?(board) || board_full?(board)
     end
 
-    display_board(board)
+    display_board(board, board_side_length)
 
     if someone_won_game?(board)
       winner = detect_winner_game(board)
