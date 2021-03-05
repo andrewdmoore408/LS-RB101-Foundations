@@ -12,7 +12,7 @@ INITIAL_MARKER = ' '
 
 GAMES_TO_WIN_A_ROUND = 3
 
-FIRST_PLAYER = "Choose"
+FIRST_PLAYER = "Player"
 
 def calculate_winning_rows(length)
   rows = []
@@ -300,8 +300,10 @@ def decide_player_one
     answer = gets.chomp.downcase
 
     answer.start_with?('p') ? "Player" : "Computer0"
+  elsif FIRST_PLAYER == "Computer"
+    "Computer0"
   else
-    FIRST_PLAYER
+    "Player"
   end
 end
 
