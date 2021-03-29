@@ -1,7 +1,9 @@
-require 'pry'
-require 'pry-byebug'
+require 'io/console'
 
 # constants
+MAXIMUM_VALID_SCORE = 21
+VALUE_DEALER_STAYS = 17
+
 CARD_RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen",
               "King", "Ace"]
 CARD_SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"]
@@ -14,7 +16,6 @@ DIFFERENCE_BETWEEN_ACE_VALUES = ACE_HIGH_VALUE - ACE_LOW_VALUE
 PLAYER_NAMES = ["Player", "Dealer"]
 NUM_CARDS_DEALT = 2
 
-VALUE_DEALER_STAYS = 17
 
 WINNER = :winner
 REASON = :reason
@@ -57,6 +58,22 @@ def initialize_deck
 end
 
 COMPLETE_DECK = initialize_deck
+
+def initialize_totals
+  totals = {}
+
+  PLAYER_NAMES.each do |player|
+    totals[player] = 0
+  end
+
+  totals
+end
+
+TOTALS = initialize_totals
+
+def reset_totals 
+  TOTALS.each_key { |player| TOTALS[player] = 0 }
+end
 
 def initialize_players
   PLAYER_NAMES
@@ -141,9 +158,10 @@ def player_takes_turn(deck, hands, current_player)
     end
 
     hit(deck, hands[current_player])
+    TOTALS[current_player] = calculate_hand_value(hands[current_player])
     display_cards(hands, current_player)
-    # binding.pry
-    if busted?(hands[current_player])
+
+    if busted?(current_player)
       break
     end
   end
@@ -153,12 +171,13 @@ def dealer_takes_turn(deck, hands, dealer)
   loop do
     display_cards(hands, dealer)
 
-    break unless calculate_hand_value(hands[dealer]) < VALUE_DEALER_STAYS
+    break unless TOTALS[dealer] < VALUE_DEALER_STAYS
 
     puts "\nDealer hits.\n"
     wait_for_key_press
 
     hit(deck, hands[dealer])
+    update_totals(hands, dealer)
   end
 end
 
@@ -180,11 +199,11 @@ def calculate_hand_value_with_aces(hand)
 
   total += aces.size * ACE_HIGH_VALUE
 
-  if total > 21
+  if total > MAXIMUM_VALID_SCORE
     loop do
       aces.pop
       total -= DIFFERENCE_BETWEEN_ACE_VALUES
-      break if total <= 21 || aces.size == 0
+      break if total <= MAXIMUM_VALID_SCORE || aces.empty?
     end
   end
 
@@ -201,8 +220,8 @@ def calculate_hand_value(hand)
   hand_value
 end
 
-def busted?(hand)
-  calculate_hand_value(hand) > 21
+def busted?(player)
+  TOTALS[player] > MAXIMUM_VALID_SCORE
 end
 
 def opponent_name(current_player)
@@ -214,7 +233,6 @@ def tie_scores?(scores)
 end
 
 def find_higher_score_player(hands)
-  # binding.pry
   scores = {}
 
   hands.each do |player_name, player_hand|
@@ -228,11 +246,12 @@ def find_higher_score_player(hands)
   scores.last.first
 end
 
+# rubocop:disable Metrics/MethodLength
 def determine_outcome(players, hands)
   outcome = {}
-  # binding.pry
+
   players.each do |player|
-    if busted?(hands[player])
+    if busted?(player)
       outcome[WINNER] = opponent_name(player)
       outcome[REASON] = "Bust"
       return outcome
@@ -250,6 +269,7 @@ def determine_outcome(players, hands)
 
   outcome
 end
+# rubocop:enable Metrics/MethodLength
 
 def display_outcome(game_end, hands)
   puts
@@ -265,6 +285,11 @@ def display_outcome(game_end, hands)
 
   prompt "#{busted_string}#{winner_string} #{score_string}"
 end
+
+def update_totals(hands, player)
+  TOTALS[player] = calculate_hand_value(hands[player])
+end
+
 # -----------------------------------------------------------------------------
 # START
 # -----------------------------------------------------------------------------
@@ -277,35 +302,27 @@ wait_for_key_press
 loop do
   deck = COMPLETE_DECK.dup
 
-  # binding.pry
-
   players = initialize_players
   current_player = players.first
 
+  reset_totals()
+
   hands = initialize_hands(players)
   deal_cards(deck, hands)
+  
+  players.each { |player| update_totals(hands, player) }
+
   display_cards(hands, current_player)
 
   players.each do |player|
     take_turn(deck, hands, player)
-    if busted?(hands[player])
+    if busted?(player)
       break
     end
   end
-  # binding.pry
-  # loser ||= calculate_loser(hands)
 
   game_end = determine_outcome(players, hands)
   display_outcome(game_end, hands)
-
-  # display_outcome(loser)
-  # DISPLAY FOR TESTING
-  # hands.each do |hand_key, hand_value|
-  #   puts "This hand is: #{hand_key} and its value is \
-  #        #{calculate_hand_value(hand_value)}"
-  #   puts
-  # end
-  # END DISPLAY FOR TESTING
 
   puts "\n"
   play_again = get_valid_input("Would you like to play again? (y/n)",
