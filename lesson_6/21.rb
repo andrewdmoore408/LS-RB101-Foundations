@@ -16,12 +16,13 @@ DIFFERENCE_BETWEEN_ACE_VALUES = ACE_HIGH_VALUE - ACE_LOW_VALUE
 PLAYER_NAMES = ["Player", "Dealer"]
 NUM_CARDS_DEALT = 2
 
-
 WINNER = :winner
 REASON = :reason
 
-def prompt(msg)
+def prompt(msg, pause = false)
   puts "=> #{msg}"
+
+  wait_for_key_press if pause
 end
 
 def get_valid_input(message_to_user, *valid_options)
@@ -71,7 +72,7 @@ end
 
 TOTALS = initialize_totals
 
-def reset_totals 
+def reset_totals
   TOTALS.each_key { |player| TOTALS[player] = 0 }
 end
 
@@ -125,17 +126,20 @@ def display_cards(hands, player_turn)
     card_ranks = cards.map { |card| get_rank(card) }
 
     if player == "Dealer" && player_turn != "Dealer"
-      card_ranks[1] = "unknown card"
+      card_ranks[1] = "???"
     end
 
     card_ranks_string = joinand(card_ranks)
+    hand_total = card_ranks_string.include?('???') ? 'unknown' : TOTALS[player]
 
     prompt "#{player_string}: #{card_ranks_string}"
+    prompt "#{player_string} #{hand_total}"
+    prompt "-------------------------------"
   end
 end
 
 def wait_for_key_press
-  puts "\n\nPress any key to continue"
+  puts "\n\n(Press any key to continue)"
   STDIN.getch
 end
 
@@ -149,16 +153,17 @@ end
 
 def player_takes_turn(deck, hands, current_player)
   loop do
-    puts
     answer = get_valid_input("Do you want to (h)it or (s)tay?",
                              "h", "hit", "s", "stay")
     if answer == "s" || answer == "stay"
-      prompt "#{current_player} stays."
+      prompt("You stay at #{TOTALS[current_player]}.", true)
       break
     end
 
+    prompt("You choose to hit...", true)
+
     hit(deck, hands[current_player])
-    TOTALS[current_player] = calculate_hand_value(hands[current_player])
+    update_totals(hands, current_player)
     display_cards(hands, current_player)
 
     if busted?(current_player)
@@ -173,7 +178,7 @@ def dealer_takes_turn(deck, hands, dealer)
 
     break unless TOTALS[dealer] < VALUE_DEALER_STAYS
 
-    puts "\nDealer hits.\n"
+    puts "\nDealer hits...\n"
     wait_for_key_press
 
     hit(deck, hands[dealer])
@@ -232,22 +237,14 @@ def tie_scores?(scores)
   scores.all? { |_, score| score == scores.first.last }
 end
 
-def find_higher_score_player(hands)
-  scores = {}
+def find_higher_score_player
+  return nil if TOTALS["Dealer"] == TOTALS["Player"]
 
-  hands.each do |player_name, player_hand|
-    scores[player_name] = calculate_hand_value(player_hand)
-  end
-
-  return nil if tie_scores?(scores)
-
-  scores = scores.sort_by { |_, score| score }
-
-  scores.last.first
+  TOTALS.max_by { |_, score| score }.first
 end
 
 # rubocop:disable Metrics/MethodLength
-def determine_outcome(players, hands)
+def determine_outcome(players)
   outcome = {}
 
   players.each do |player|
@@ -258,7 +255,7 @@ def determine_outcome(players, hands)
     end
   end
 
-  high_score_player = find_higher_score_player(hands)
+  high_score_player = find_higher_score_player
 
   if high_score_player.nil?
     outcome[WINNER] = "Push"
@@ -271,7 +268,7 @@ def determine_outcome(players, hands)
 end
 # rubocop:enable Metrics/MethodLength
 
-def display_outcome(game_end, hands)
+def display_outcome(game_end)
   puts
 
   if game_end[WINNER] == "Push"
@@ -280,8 +277,12 @@ def display_outcome(game_end, hands)
   end
 
   winner_string = game_end[WINNER] == "Player" ? "You win" : "Dealer wins"
-  busted_string = game_end[REASON] == "Bust" ? "Bust!\n\n" : ""
-  score_string = "with #{calculate_hand_value(hands[game_end[WINNER]])}."
+  busted_string = game_end[REASON] == "Bust" ? "BUST!\n\n" : ""
+  score_string = if game_end[REASON] == "Bust"
+                   "\b!"
+                 else
+                   "with #{TOTALS[game_end[WINNER]]}."
+                 end
 
   prompt "#{busted_string}#{winner_string} #{score_string}"
 end
@@ -291,7 +292,7 @@ def update_totals(hands, player)
 end
 
 # -----------------------------------------------------------------------------
-# START
+# START GAME
 # -----------------------------------------------------------------------------
 system "clear"
 
@@ -305,11 +306,11 @@ loop do
   players = initialize_players
   current_player = players.first
 
-  reset_totals()
+  reset_totals
 
   hands = initialize_hands(players)
   deal_cards(deck, hands)
-  
+
   players.each { |player| update_totals(hands, player) }
 
   display_cards(hands, current_player)
@@ -321,8 +322,8 @@ loop do
     end
   end
 
-  game_end = determine_outcome(players, hands)
-  display_outcome(game_end, hands)
+  game_outcome = determine_outcome(players)
+  display_outcome(game_outcome)
 
   puts "\n"
   play_again = get_valid_input("Would you like to play again? (y/n)",
@@ -330,4 +331,4 @@ loop do
   break if play_again == "n" || play_again == "no"
 end
 
-prompt "Thanks for playing and come back again soon!"
+prompt "Thanks for playing and see you next time!"
