@@ -306,14 +306,14 @@ end
 def update_games_won(game_outcome, games_won)
   return if game_outcome[WINNER] == "Push"
 
-  games_won[ game_outcome[WINNER] ] += 1
+  games_won[game_outcome[WINNER]] += 1
 end
 
 def display_games_won(games_won)
   puts
   prompt "The current scores are:"
   games_won.each do |player, num_games|
-    prompt "#{player} has won #{num_games} games."
+    prompt "#{player} has won #{num_games} game(s)."
   end
 
   wait_for_key_press
@@ -372,22 +372,22 @@ loop do
 
     display_games_won(games_won)
 
-    play_another_game = get_valid_input("Would you like to continue this round? (y/n)",
-                                "y", "yes", "n", "no")
+    play_another_game = get_valid_input("Continue this round? (y/n)",
+                                        "y", "yes", "n", "no")
     break if play_another_game.include?("n")
 
-  # end of a game
+    # end of a game
   end
-  
+
   break if play_another_game.include?("n")
 
   display_round_outcome(games_won)
 
-  play_another_round = get_valid_input("Would you like to play another round? (y/n)",
+  play_another_round = get_valid_input("Play another round? (y/n)",
                                        "y", "yes", "n", "no")
   break if play_another_round.include?("n")
 
-# end of a round
+  # end of a round
 end
 
 prompt "Thanks for playing and see you next time!"
