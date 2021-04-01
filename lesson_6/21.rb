@@ -21,6 +21,8 @@ NUM_CARDS_DEALT = 2
 WINNER = :winner
 REASON = :reason
 
+YES_AND_NO_OPTIONS = "y", "yes", "n", "no"
+
 def prompt(msg, pause = false)
   puts "=> #{msg}"
 
@@ -28,6 +30,9 @@ def prompt(msg, pause = false)
 end
 
 def get_valid_input(message_to_user, *valid_options)
+  # get all options if they were passed as a nested array
+  valid_options = valid_options.first if valid_options.size == 1
+
   input = nil
 
   loop do
@@ -72,12 +77,6 @@ def initialize_totals
   totals
 end
 
-TOTALS = initialize_totals
-
-def reset_totals
-  TOTALS.each_key { |player| TOTALS[player] = 0 }
-end
-
 def initialize_players
   PLAYER_NAMES
 end
@@ -117,7 +116,7 @@ def deal_cards(deck, hands)
   end
 end
 
-def display_cards(hands, player_turn)
+def display_cards(hands, player_turn, totals)
   system "clear"
 
   display_hands = hands.reverse_each
@@ -132,7 +131,7 @@ def display_cards(hands, player_turn)
     end
 
     card_ranks_string = joinand(card_ranks)
-    hand_total = card_ranks_string.include?('???') ? 'unknown' : TOTALS[player]
+    hand_total = card_ranks_string.include?('???') ? 'unknown' : totals[player]
 
     prompt "#{player_string}: #{card_ranks_string}"
     prompt "#{player_string} #{hand_total}"
@@ -141,50 +140,53 @@ def display_cards(hands, player_turn)
 end
 
 def wait_for_key_press
-  puts "\n\n(Press any key to continue)"
+  output_blank_lines(2)
+  puts "(Press any key to continue)"
   STDIN.getch
 end
 
-def take_turn(deck, hands, player)
+def take_turn(deck, hands, player, totals)
   if player == "Dealer"
-    dealer_takes_turn(deck, hands, player)
+    dealer_takes_turn(deck, hands, player, totals)
   else
-    player_takes_turn(deck, hands, player)
+    player_takes_turn(deck, hands, player, totals)
   end
 end
 
-def player_takes_turn(deck, hands, current_player)
+def player_takes_turn(deck, hands, current_player, totals)
   loop do
     answer = get_valid_input("Do you want to (h)it or (s)tay?",
                              "h", "hit", "s", "stay")
     if answer == "s" || answer == "stay"
-      prompt("You stay at #{TOTALS[current_player]}.", true)
+      prompt("You stay at #{totals[current_player]}.", true)
       break
     end
 
     prompt("You choose to hit...", true)
 
     hit(deck, hands[current_player])
-    update_totals(hands, current_player)
-    display_cards(hands, current_player)
+    update_totals(hands, current_player, totals)
+    display_cards(hands, current_player, totals)
 
-    if busted?(current_player)
+    if busted?(current_player, totals)
       break
     end
   end
 end
 
-def dealer_takes_turn(deck, hands, dealer)
+def dealer_takes_turn(deck, hands, dealer, totals)
   loop do
-    display_cards(hands, dealer)
+    display_cards(hands, dealer, totals)
 
-    break unless TOTALS[dealer] < VALUE_DEALER_STAYS
+    break unless totals[dealer] < VALUE_DEALER_STAYS
 
-    puts "\nDealer hits...\n"
+    output_blank_lines
+    prompt "Dealer hits..."
+    output_blank_lines
     wait_for_key_press
 
     hit(deck, hands[dealer])
-    update_totals(hands, dealer)
+    update_totals(hands, dealer, totals)
   end
 end
 
@@ -227,8 +229,8 @@ def calculate_hand_value(hand)
   hand_value
 end
 
-def busted?(player)
-  TOTALS[player] > MAXIMUM_VALID_SCORE
+def busted?(player, totals)
+  totals[player] > MAXIMUM_VALID_SCORE
 end
 
 def opponent_name(current_player)
@@ -239,38 +241,40 @@ def tie_scores?(scores)
   scores.all? { |_, score| score == scores.first.last }
 end
 
-def find_higher_score_player
-  return nil if TOTALS["Dealer"] == TOTALS["Player"]
+def find_higher_score_player(totals)
+  return nil if totals["Dealer"] == totals["Player"]
 
-  TOTALS.max_by { |_, score| score }.first
+  totals.max_by { |_, score| score }.first
 end
 
-# rubocop:disable Metrics/MethodLength
-def determine_game_outcome(players)
-  outcome = {}
-
-  players.each do |player|
-    if busted?(player)
-      outcome[WINNER] = opponent_name(player)
-      outcome[REASON] = "Bust"
-      return outcome
-    end
-  end
-
-  high_score_player = find_higher_score_player
-
+def resolve_outcome_when_no_bust!(high_score_player, outcome)
   if high_score_player.nil?
     outcome[WINNER] = "Push"
   else
     outcome[WINNER] = high_score_player
     outcome[REASON] = "High Score"
   end
+end
+
+def determine_game_outcome(players, totals)
+  outcome = {}
+
+  players.each do |player|
+    if busted?(player, totals)
+      outcome[WINNER] = opponent_name(player)
+      outcome[REASON] = "Bust"
+      return outcome
+    end
+  end
+
+  high_score_player = find_higher_score_player(totals)
+
+  resolve_outcome_when_no_bust!(high_score_player, outcome)
 
   outcome
 end
-# rubocop:enable Metrics/MethodLength
 
-def display_game_outcome(game_end)
+def display_game_outcome(game_end, totals)
   puts
 
   if game_end[WINNER] == "Push"
@@ -278,19 +282,22 @@ def display_game_outcome(game_end)
     return
   end
 
-  winner_string = game_end[WINNER] == "Player" ? "You win" : "Dealer wins"
-  busted_string = game_end[REASON] == "Bust" ? "BUST!\n\n" : ""
+  # rubocop:disable Style/TernaryParentheses
+  winner_string = (game_end[WINNER] == "Player") ? "You win" : "Dealer wins"
+  busted_string = (game_end[REASON] == "Bust") ? "BUST!\n\n" : ""
+  # rubocop:enable Style/TernaryParentheses
+
   score_string = if game_end[REASON] == "Bust"
                    "\b!"
                  else
-                   "with #{TOTALS[game_end[WINNER]]}."
+                   "with #{totals[game_end[WINNER]]}."
                  end
 
   prompt "#{busted_string}#{winner_string} #{score_string}"
 end
 
-def update_totals(hands, player)
-  TOTALS[player] = calculate_hand_value(hands[player])
+def update_totals(hands, player, totals)
+  totals[player] = calculate_hand_value(hands[player])
 end
 
 def initialize_games_won
@@ -325,14 +332,23 @@ def display_round_outcome(games_won)
   prompt "#{round_winner} wins the round!"
 end
 
+def welcome_player
+  system "clear"
+
+  prompt "Welcome to 21! Step right up and play your cards!"
+  prompt "First player to win #{GAMES_TO_WIN_A_ROUND} games wins the round."
+  wait_for_key_press
+end
+
+def output_blank_lines(num = 1)
+  num.times { |_| print "\n" }
+end
+
 # -----------------------------------------------------------------------------
 # START GAME
 # -----------------------------------------------------------------------------
-system "clear"
 
-prompt "Welcome to 21! Step right up and play your cards!"
-prompt "First player to win #{GAMES_TO_WIN_A_ROUND} games wins the round."
-wait_for_key_press
+welcome_player
 
 # beginning of a round
 loop do
@@ -341,39 +357,39 @@ loop do
 
   # beginning of one game
   loop do
+    totals = initialize_totals
     deck = COMPLETE_DECK.dup
 
     players = initialize_players
     current_player = players.first
 
-    reset_totals
-
     hands = initialize_hands(players)
+
     deal_cards(deck, hands)
 
-    players.each { |player| update_totals(hands, player) }
+    players.each { |player| update_totals(hands, player, totals) }
 
-    display_cards(hands, current_player)
+    display_cards(hands, current_player, totals)
 
     players.each do |player|
-      take_turn(deck, hands, player)
-      if busted?(player)
+      take_turn(deck, hands, player, totals)
+      if busted?(player, totals)
         break
       end
     end
 
-    game_outcome = determine_game_outcome(players)
-    display_game_outcome(game_outcome)
+    game_outcome = determine_game_outcome(players, totals)
+    display_game_outcome(game_outcome, totals)
     update_games_won(game_outcome, games_won)
 
-    puts "\n"
+    output_blank_lines(2)
 
     break if round_over?(games_won)
 
     display_games_won(games_won)
 
     play_another_game = get_valid_input("Continue this round? (y/n)",
-                                        "y", "yes", "n", "no")
+                                        YES_AND_NO_OPTIONS)
     break if play_another_game.include?("n")
 
     # end of a game
@@ -384,7 +400,7 @@ loop do
   display_round_outcome(games_won)
 
   play_another_round = get_valid_input("Play another round? (y/n)",
-                                       "y", "yes", "n", "no")
+                                       YES_AND_NO_OPTIONS)
   break if play_another_round.include?("n")
 
   # end of a round
