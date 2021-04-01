@@ -4,6 +4,8 @@ require 'io/console'
 MAXIMUM_VALID_SCORE = 21
 VALUE_DEALER_STAYS = 17
 
+GAMES_TO_WIN_A_ROUND = 5
+
 CARD_RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen",
               "King", "Ace"]
 CARD_SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"]
@@ -244,7 +246,7 @@ def find_higher_score_player
 end
 
 # rubocop:disable Metrics/MethodLength
-def determine_outcome(players)
+def determine_game_outcome(players)
   outcome = {}
 
   players.each do |player|
@@ -268,7 +270,7 @@ def determine_outcome(players)
 end
 # rubocop:enable Metrics/MethodLength
 
-def display_outcome(game_end)
+def display_game_outcome(game_end)
   puts
 
   if game_end[WINNER] == "Push"
@@ -291,44 +293,101 @@ def update_totals(hands, player)
   TOTALS[player] = calculate_hand_value(hands[player])
 end
 
+def initialize_games_won
+  points = {}
+  PLAYER_NAMES.each { |player| points[player] = 0 }
+  points
+end
+
+def round_over?(games_won)
+  games_won.any? { |_, wins| wins == 5 }
+end
+
+def update_games_won(game_outcome, games_won)
+  return if game_outcome[WINNER] == "Push"
+
+  games_won[ game_outcome[WINNER] ] += 1
+end
+
+def display_games_won(games_won)
+  puts
+  prompt "The current scores are:"
+  games_won.each do |player, num_games|
+    prompt "#{player} has won #{num_games} games."
+  end
+
+  wait_for_key_press
+end
+
+def display_round_outcome(games_won)
+  round_winner = games_won.key(5)
+
+  prompt "#{round_winner} wins the round!"
+end
+
 # -----------------------------------------------------------------------------
 # START GAME
 # -----------------------------------------------------------------------------
 system "clear"
 
 prompt "Welcome to 21! Step right up and play your cards!"
-
+prompt "First player to win #{GAMES_TO_WIN_A_ROUND} games wins the round."
 wait_for_key_press
 
+# beginning of a round
 loop do
-  deck = COMPLETE_DECK.dup
+  games_won = initialize_games_won
+  play_another_game = nil
 
-  players = initialize_players
-  current_player = players.first
+  # beginning of one game
+  loop do
+    deck = COMPLETE_DECK.dup
 
-  reset_totals
+    players = initialize_players
+    current_player = players.first
 
-  hands = initialize_hands(players)
-  deal_cards(deck, hands)
+    reset_totals
 
-  players.each { |player| update_totals(hands, player) }
+    hands = initialize_hands(players)
+    deal_cards(deck, hands)
 
-  display_cards(hands, current_player)
+    players.each { |player| update_totals(hands, player) }
 
-  players.each do |player|
-    take_turn(deck, hands, player)
-    if busted?(player)
-      break
+    display_cards(hands, current_player)
+
+    players.each do |player|
+      take_turn(deck, hands, player)
+      if busted?(player)
+        break
+      end
     end
+
+    game_outcome = determine_game_outcome(players)
+    display_game_outcome(game_outcome)
+    update_games_won(game_outcome, games_won)
+
+    puts "\n"
+
+    break if round_over?(games_won)
+
+    display_games_won(games_won)
+
+    play_another_game = get_valid_input("Would you like to continue this round? (y/n)",
+                                "y", "yes", "n", "no")
+    break if play_another_game.include?("n")
+
+  # end of a game
   end
+  
+  break if play_another_game.include?("n")
 
-  game_outcome = determine_outcome(players)
-  display_outcome(game_outcome)
+  display_round_outcome(games_won)
 
-  puts "\n"
-  play_again = get_valid_input("Would you like to play again? (y/n)",
-                               "y", "yes", "n", "no")
-  break if play_again == "n" || play_again == "no"
+  play_another_round = get_valid_input("Would you like to play another round? (y/n)",
+                                       "y", "yes", "n", "no")
+  break if play_another_round.include?("n")
+
+# end of a round
 end
 
 prompt "Thanks for playing and see you next time!"
